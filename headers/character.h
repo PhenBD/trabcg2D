@@ -53,6 +53,9 @@ public:
     int getLookingDirection(){
         return lookingDirection;
     };
+    GLfloat getThetaArm(){
+        return thetaArm;
+    };
 };
 
 #endif	/* CHARACTER_H */

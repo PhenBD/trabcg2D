@@ -235,6 +235,16 @@ void updatePlayer(GLdouble timeDiff) {
         player.setLookingDirection(RIGHT);
         player.flipDirection();
     }
+
+    // Move the arm of the player based on the mouse position
+    int signal;
+    if (player.getLookingDirection() == LEFT)
+        signal = 1;
+    else if (player.getLookingDirection() == RIGHT)
+        signal = -1;
+
+    if (mouseY != 0)
+        player.setThetaArm(signal * ((90.0f/Height) * (Height - mouseY) + 45));
 }
 
 void updateEnemies(GLdouble timeDiff) {
