@@ -2,17 +2,19 @@
 #define	ENEMY_H
 #include <GL/gl.h>
 #include <GL/glu.h>
-#include "object.h"
+#include "character.h"
 
-class Enemy : public Object {
+class Enemy : public Character {
 
 private:
     GLfloat walkSpeed = 0.05;
 
 public:
     Enemy(){}; // Default constructor
-    Enemy(GLfloat x, GLfloat y, GLfloat r) : Object(x - r, y - r, r, 2*r) {};
-    void draw();
+    Enemy(GLfloat x, GLfloat y, GLfloat r) : Character(x, y, r) {};
+    void draw(){
+        Character::draw(1.0, 0.5, 0.0);
+    }
 
     GLfloat getWalkSpeed(){
         return walkSpeed;
