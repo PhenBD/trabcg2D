@@ -11,7 +11,7 @@ private:
 
 public:
     Enemy(){}; // Default constructor
-    Enemy(GLfloat x, GLfloat y, GLfloat r) : Object(x, y, r, 2*r) {};
+    Enemy(GLfloat x, GLfloat y, GLfloat r) : Object(x - r, y - r, r, 2*r) {};
     void draw();
 
     GLfloat getWalkSpeed(){

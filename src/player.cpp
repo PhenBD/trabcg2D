@@ -5,12 +5,37 @@ void Player::draw() {
         glColor3f(0, 255, 0);
         glTranslatef(x, y, 0);
         glBegin(GL_POLYGON);
-            glVertex2f(-width/2, 0);
-            glVertex2f(-width/2, -height);
-            glVertex2f(width/2, -height);
-            glVertex2f(width/2, 0);
+            glVertex2d(0, 0);
+            glVertex2d(width, 0);
+            glVertex2d(width, height);
+            glVertex2d(0, height);
         glEnd();
     glPopMatrix();
+}
+
+void Player::checkCollision(Object obj) {
+    // Check collision on X and Y axes
+    if (getRight() > obj.getLeft() && getLeft() < obj.getRight() &&
+        getBottom() > obj.getTop() && getTop() < obj.getBottom()) {
+        
+        // Handle collision based on player's direction
+        switch (getDirection()) {
+            case RIGHT:
+                setX(obj.getLeft() - getWidth());
+                break;
+            case LEFT:
+                setX(obj.getRight());
+                break;
+            case UP:
+                setY(obj.getBottom());
+                break;
+            case DOWN:
+                setY(obj.getTop() - getHeight());
+                break;
+            default:
+                break;
+        }
+    }
 }
 
 void Player::moveX(GLfloat dx) {

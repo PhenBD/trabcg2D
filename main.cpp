@@ -12,10 +12,12 @@
 #include "headers/enemy.h"
 #include "headers/arena.h"
 
+#include <iomanip> 
+
 #define GRAVITY 0.1
 #define INC_KEY 1
 
-//Key status
+// Key status
 int keyStatus[256];
 
 // Window dimensions
@@ -149,55 +151,45 @@ void checkCollisionPlayer() {
     // X axis
     if (player.getLeft() < arena.getLeft())
     {
-        player.setX(arena.getLeft() + player.getWidth()/2);
+        player.setX(arena.getLeft());
     }
     else if (player.getRight() > arena.getRight()) 
     {
-        player.setX(arena.getRight() - player.getWidth()/2);
+        player.setX(arena.getRight() - player.getWidth());
     }
     // Y axis
     if (player.getTop() < arena.getTop())
     {
-        player.setY(arena.getTop() + player.getHeight());
+        player.setY(arena.getTop());
     }
     else if (player.getBottom() > arena.getBottom()) 
     {
-        player.setY(arena.getBottom());
+        player.setY(arena.getBottom() - player.getHeight());
     }
 
-    // // Check collision with obstacles
-    // for (Obstacle obs : obstacles) {
-    //     // X axis
-    //     if (player.getX() - (player.getWidth()/2) < obs.getX() + (obs.getWidth()/2))
-    //     {
-    //         player.setX(obs.getX() + obs.getWidth() + player.getWidth()/2);
-    //     }
-    //     else if (player.getX() + (player.getWidth()/2) > obs.getX() + (obs.getWidth()/2)) 
-    //     {
-    //         player.setX(obs.getX() - player.getWidth()/2);
-    //     }
-    // }
+    // Check collision with obstacles
+    for (Obstacle obs : obstacles) {
+        player.checkCollision(obs);
+    }
 
-    // // Check collision with enemies
-    // for (Enemy enemy : enemies) {
-
-    // }
+    // Check collision with enemies
+    for (Enemy enemy : enemies) {
+        player.checkCollision(enemy);
+    }
 }
 
 void updatePlayer(GLdouble timeDiff) {
-    // Gravity
-    player.moveY(GRAVITY * timeDiff);
-    checkCollisionPlayer();
-
     // Treat keyPress
     if(keyStatus[(int)('a')])
     {
         player.moveX(-player.getWalkSpeed() * timeDiff);
+        player.setDirection(LEFT);
         checkCollisionPlayer();
     }
     if(keyStatus[(int)('d')])
     {
         player.moveX(player.getWalkSpeed() * timeDiff);
+        player.setDirection(RIGHT);
         checkCollisionPlayer();
     }
 
@@ -205,7 +197,14 @@ void updatePlayer(GLdouble timeDiff) {
     if (keyStatus[(int)('r')])
     {
         player.moveY(-player.getJumpSpeed() * timeDiff);
+        player.setDirection(UP);
+        checkCollisionPlayer();
     }
+
+    // Gravity
+    player.moveY(GRAVITY * timeDiff);
+    player.setDirection(DOWN);
+    checkCollisionPlayer();
 }
 
 void idle(void)

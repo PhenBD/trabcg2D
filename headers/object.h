@@ -2,6 +2,7 @@
 #define	OBJECT_H
 #include <GL/gl.h>
 #include <GL/glu.h>
+#include "utils.h"
 
 class Object {
 
