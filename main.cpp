@@ -12,9 +12,6 @@
 #include "headers/enemy.h"
 #include "headers/arena.h"
 
-#include <iomanip> 
-
-#define GRAVITY 0.1
 #define INC_KEY 1
 
 // Key status
@@ -105,10 +102,16 @@ void ReadSvg(const char* filename) {
 void mouseClick(int button, int state, int x, int y) {
     if (button == GLUT_RIGHT_BUTTON) {
         if (state == GLUT_DOWN) {
-            keyStatus[(int)('r')] = 1;
-        } else if (state == GLUT_UP) {
-            keyStatus[(int)('r')] = 0;
+            if (!player.isOnAir())
+            {
+                player.setJumping(true);
+            }
         }
+        else if (state == GLUT_UP)
+        {
+            player.setJumping(false);
+        }
+        
         glutPostRedisplay();
     }
 }
@@ -147,34 +150,35 @@ void ResetKeyStatus()
 }
 
 void checkCollisionPlayer() {
+    bool landedOnArena = false;
+    bool landedOnObstacle = false;
+    bool landedOnEnemy = false;
+
     // Check collision with the arena
-    // X axis
-    if (player.getLeft() < arena.getLeft())
-    {
-        player.setX(arena.getLeft());
-    }
-    else if (player.getRight() > arena.getRight()) 
-    {
-        player.setX(arena.getRight() - player.getWidth());
-    }
-    // Y axis
-    if (player.getTop() < arena.getTop())
-    {
-        player.setY(arena.getTop());
-    }
-    else if (player.getBottom() > arena.getBottom()) 
-    {
-        player.setY(arena.getBottom() - player.getHeight());
-    }
+    // The function returns true if the player landed on the arena
+    landedOnArena = player.checkArenaCollision(arena);
 
     // Check collision with obstacles
     for (Obstacle obs : obstacles) {
-        player.checkCollision(obs);
+        // The function returns true if the player landed on the object
+        if (player.checkCollision(obs))
+            landedOnObstacle = true;
     }
 
     // Check collision with enemies
     for (Enemy enemy : enemies) {
-        player.checkCollision(enemy);
+        // The function returns true if the player landed on the object
+        if (player.checkCollision(enemy))
+            landedOnEnemy = true;
+    }
+
+    // If the player landed on anything, it is not on air
+    if (landedOnArena || landedOnObstacle || landedOnEnemy) {
+        player.setOnAir(false);
+        player.setJumping(false);
+        player.setJumpingTime(0);
+    } else {
+        player.setOnAir(true);
     }
 }
 
@@ -193,16 +197,17 @@ void updatePlayer(GLdouble timeDiff) {
         checkCollisionPlayer();
     }
 
-    // Treat mouse click
-    if (keyStatus[(int)('r')])
-    {
+    // Treat jumping
+    if (player.getJumpingTime() <= 2000 && player.isJumping()) {
         player.moveY(-player.getJumpSpeed() * timeDiff);
+        player.setOnAir(true);
+        player.addJumpingTime(timeDiff);
         player.setDirection(UP);
         checkCollisionPlayer();
     }
 
     // Gravity
-    player.moveY(GRAVITY * timeDiff);
+    player.moveY((player.getJumpSpeed()/2) * timeDiff);
     player.setDirection(DOWN);
     checkCollisionPlayer();
 }

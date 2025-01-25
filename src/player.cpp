@@ -13,7 +13,7 @@ void Player::draw() {
     glPopMatrix();
 }
 
-void Player::checkCollision(Object obj) {
+bool Player::checkCollision(Object obj) {
     // Check collision on X and Y axes
     if (getRight() > obj.getLeft() && getLeft() < obj.getRight() &&
         getBottom() > obj.getTop() && getTop() < obj.getBottom()) {
@@ -31,11 +31,37 @@ void Player::checkCollision(Object obj) {
                 break;
             case DOWN:
                 setY(obj.getTop() - getHeight());
-                break;
+                return true;
             default:
                 break;
         }
     }
+
+    return false;
+}
+
+bool Player::checkArenaCollision(Arena arena){
+    // X axis
+    if (getLeft() < arena.getLeft())
+    {
+        setX(arena.getLeft());
+    }
+    else if (getRight() > arena.getRight()) 
+    {
+        setX(arena.getRight() - getWidth());
+    }
+    // Y axis
+    if (getTop() < arena.getTop())
+    {
+        setY(arena.getTop());
+    }
+    else if (getBottom() > arena.getBottom()) 
+    {
+        setY(arena.getBottom() - getHeight());
+        return true;
+    }
+
+    return false;
 }
 
 void Player::moveX(GLfloat dx) {
