@@ -17,6 +17,10 @@
 // Key status
 int keyStatus[256];
 
+// Mouse position
+GLint mouseX = 0.0;
+GLint mouseY = 0.0;
+
 // Window dimensions
 const GLint Width = 500;
 const GLint Height = 500;
@@ -98,16 +102,22 @@ void ReadSvg(const char* filename) {
     }
 }
 
+// Mouse position callback
+void passiveMotionCallback(int x, int y) {
+    mouseX = x;
+    mouseY = y;
+}
+
 // Mouse callback
 void mouseClick(int button, int state, int x, int y) {
     if (button == GLUT_RIGHT_BUTTON) {
         if (state == GLUT_DOWN) {
-            if (!player.isOnAir())
+            if (!player.isOnAir()) 
             {
                 player.setJumping(true);
             }
         }
-        else if (state == GLUT_UP)
+        else if (state == GLUT_UP) 
         {
             player.setJumping(false);
         }
@@ -155,20 +165,21 @@ void checkCollisionPlayer() {
     bool landedOnEnemy = false;
 
     // Check collision with the arena
-    // The function returns true if the player landed on the arena
-    landedOnArena = player.checkArenaCollision(arena);
+    // The function returns the direction that the player collided with the arena
+    if (player.checkArenaCollision(arena) == DOWN)
+        landedOnArena = true;
 
     // Check collision with obstacles
     for (Obstacle obs : obstacles) {
-        // The function returns true if the player landed on the object
-        if (player.checkCollision(obs))
+        // The function returns the direction that the player collided with the object
+        if (player.checkCollision(obs) == DOWN)
             landedOnObstacle = true;
     }
 
     // Check collision with enemies
     for (Enemy enemy : enemies) {
-        // The function returns true if the player landed on the object
-        if (player.checkCollision(enemy))
+        // The function returns the direction that the player collided with the object
+        if (player.checkCollision(enemy) == DOWN)
             landedOnEnemy = true;
     }
 
@@ -177,7 +188,8 @@ void checkCollisionPlayer() {
         player.setOnAir(false);
         player.setJumping(false);
         player.setJumpingTime(0);
-    } else {
+    } 
+    else {
         player.setOnAir(true);
     }
 }
@@ -198,7 +210,8 @@ void updatePlayer(GLdouble timeDiff) {
     }
 
     // Treat jumping
-    if (player.getJumpingTime() <= 2000 && player.isJumping()) {
+    if (player.getJumpingTime() <= 2000 && player.isJumping()) 
+    {
         player.moveY(-player.getJumpSpeed() * timeDiff);
         player.setOnAir(true);
         player.addJumpingTime(timeDiff);
@@ -210,6 +223,40 @@ void updatePlayer(GLdouble timeDiff) {
     player.moveY((player.getJumpSpeed()/2) * timeDiff);
     player.setDirection(DOWN);
     checkCollisionPlayer();
+
+    // Flip the direction of the player based on the mouse position
+    if (mouseX < 250 && player.getLookingDirection() == RIGHT) 
+    {
+        player.setLookingDirection(LEFT);
+        player.flipDirection();
+    } 
+    else if (mouseX > 250 && player.getLookingDirection() == LEFT)
+    {
+        player.setLookingDirection(RIGHT);
+        player.flipDirection();
+    }
+}
+
+void updateEnemies(GLdouble timeDiff) {
+    // for (Enemy &enemy : enemies) {
+    //     // Move the enemy
+    //     enemy.moveX(enemy.getWalkSpeed() * timeDiff);
+    //     enemy.setDirection(RIGHT);
+
+    //     // Check collision with the arena
+    //     enemy.checkArenaCollision(arena);
+
+    //     // Check collision with obstacles
+    //     for (Obstacle obs : obstacles) {
+    //         enemy.checkCollision(obs);
+    //     }
+
+    //     // Check collision with the player
+    //     if (enemy.checkCollision(player)) {
+    //         // If the enemy collided with the player, the player is reset to the initial position
+    //         player = Player(arena.getHeight()/2, arena.getY(), 10);
+    //     }
+    // }
 }
 
 void idle(void)
@@ -224,6 +271,8 @@ void idle(void)
     previousTime = currentTime; //Update previous time
 
     updatePlayer(timeDiference);
+
+    updateEnemies(timeDiference);
     
     glutPostRedisplay();
 }
@@ -310,6 +359,7 @@ int main(int argc, char** argv) {
 
     // Mouse callback
     glutMouseFunc(mouseClick);
+    glutPassiveMotionFunc(passiveMotionCallback);
     
     init(arenaSVGFilename);
  

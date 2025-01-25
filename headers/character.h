@@ -20,6 +20,7 @@ protected:
 
 private:
     int direction = RIGHT;
+    int lookingDirection = RIGHT;
 
     void drawRect(GLfloat height, GLfloat width, GLfloat R, GLfloat G, GLfloat B);
     void drawCirc(GLfloat radius, GLfloat R, GLfloat G, GLfloat B);
@@ -32,15 +33,25 @@ public:
     void draw(GLfloat R, GLfloat G, GLfloat B);
     void moveX(GLfloat dx);
     void moveY(GLfloat dy);
-    bool checkCollision(Object obj);
-    bool checkArenaCollision(Arena arena);
+    int checkCollision(Object obj);
+    int checkArenaCollision(Arena arena);
+    void flipDirection();
 
     void setDirection(int direction){
         this->direction = direction;
     };
+    void setLookingDirection(int direction){
+        this->lookingDirection = direction;
+    };
+    void setThetaArm(GLfloat theta){
+        this->thetaArm = theta;
+    };
 
     int getDirection(){
         return direction;
+    };
+    int getLookingDirection(){
+        return lookingDirection;
     };
 };
 

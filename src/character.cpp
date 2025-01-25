@@ -40,19 +40,19 @@ void Character::drawLegs(GLfloat x, GLfloat y, GLfloat thetaLeft1, GLfloat theta
     glPushMatrix();
         glTranslatef(x, y, 0);
         glRotatef(thetaLeft1, 0, 0, 1);
-        drawRect(height * 0.20, height * 0.05, 1.0, 0.0, 0.0);
-        glTranslatef(0, height * 0.20, 0);
+        drawRect(height * 0.22, height * 0.05, 1.0, 0.0, 0.0);
+        glTranslatef(0, height * 0.22, 0);
         glRotatef(thetaLeft2, 0, 0, 1);
-        drawRect(height * 0.20, height * 0.05, 1.0, 0.0, 0.0);
+        drawRect(height * 0.22, height * 0.05, 1.0, 0.0, 0.0);
     glPopMatrix();
 
     glPushMatrix();
         glTranslatef(x, y, 0);
         glRotatef(thetaRight1, 0, 0, 1);
-        drawRect(height * 0.20, height * 0.05, 1.0, 0.0, 0.0);
-        glTranslatef(0, height * 0.20, 0);
+        drawRect(height * 0.22, height * 0.05, 1.0, 0.0, 0.0);
+        glTranslatef(0, height * 0.22, 0);
         glRotatef(thetaRight2, 0, 0, 1);
-        drawRect(height * 0.20, height * 0.05, 1.0, 0.0, 0.0);
+        drawRect(height * 0.22, height * 0.05, 1.0, 0.0, 0.0);
     glPopMatrix();
 }
 
@@ -67,7 +67,7 @@ void Character::draw(GLfloat R, GLfloat G, GLfloat B) {
     glPopMatrix();
 }
 
-bool Character::checkCollision(Object obj) {
+int Character::checkCollision(Object obj) {
     // Check collision on X and Y axes
     if (getRight() > obj.getLeft() && getLeft() < obj.getRight() &&
         getBottom() > obj.getTop() && getTop() < obj.getBottom()) {
@@ -76,46 +76,57 @@ bool Character::checkCollision(Object obj) {
         switch (getDirection()) {
             case RIGHT:
                 setX(obj.getLeft() - getWidth());
-                break;
+                return RIGHT;
             case LEFT:
                 setX(obj.getRight());
-                break;
+                return LEFT;
             case UP:
                 setY(obj.getBottom());
-                break;
+                return UP;
             case DOWN:
                 setY(obj.getTop() - getHeight());
-                return true;
+                return DOWN;
             default:
                 break;
         }
     }
 
-    return false;
+    return -1;
 }
 
-bool Character::checkArenaCollision(Arena arena){
+int Character::checkArenaCollision(Arena arena){
     // X axis
     if (getLeft() < arena.getLeft())
     {
         setX(arena.getLeft());
+        return LEFT;
     }
     else if (getRight() > arena.getRight()) 
     {
         setX(arena.getRight() - getWidth());
+        return RIGHT;
     }
     // Y axis
     if (getTop() < arena.getTop())
     {
         setY(arena.getTop());
+        return UP;
     }
     else if (getBottom() > arena.getBottom()) 
     {
         setY(arena.getBottom() - getHeight());
-        return true;
+        return DOWN;
     }
 
-    return false;
+    return -1;
+}
+
+void Character::flipDirection() {
+    thetaArm *= -1;
+    thetaLeft1 *= -1;
+    thetaLeft2 *= -1;
+    thetaRight1 *= -1;
+    thetaRight2 *= -1;
 }
 
 void Character::moveX(GLfloat dx) {
