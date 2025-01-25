@@ -55,7 +55,7 @@ public:
     };
     GLfloat getThetaArm(){
         return thetaArm;
-    };
+    };  
 };
 
 #endif	/* CHARACTER_H */

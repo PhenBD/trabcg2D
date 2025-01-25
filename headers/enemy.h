@@ -7,7 +7,8 @@
 class Enemy : public Character {
 
 private:
-    GLfloat walkSpeed = 0.05;
+    GLfloat walkSpeed = 0.01;
+    int walkingDirection = RIGHT;
 
 public:
     Enemy(){}; // Default constructor
@@ -16,8 +17,15 @@ public:
         Character::draw(1.0, 0.5, 0.0);
     }
 
+    void setWalkingDirection(int direction){
+        walkingDirection = direction;
+    };
+
     GLfloat getWalkSpeed(){
         return walkSpeed;
+    };
+    GLfloat getWalkingDirection(){
+        return walkingDirection;
     };
 };
 

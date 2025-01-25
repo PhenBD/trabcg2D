@@ -102,8 +102,14 @@ void ReadSvg(const char* filename) {
     }
 }
 
-// Mouse position callback
+// Mouse passive position callback
 void passiveMotionCallback(int x, int y) {
+    mouseX = x;
+    mouseY = y;
+}
+
+// Mouse motion when clicked callback
+void motionCallback(int x, int y) {
     mouseX = x;
     mouseY = y;
 }
@@ -124,6 +130,30 @@ void mouseClick(int button, int state, int x, int y) {
         
         glutPostRedisplay();
     }
+}
+
+void getMouseWorldCoordinates(int mouseX, int mouseY, float &worldX, float &worldY) {
+    // Get the projection matrix and the modelview matrix
+    GLdouble modelview[16];
+    GLdouble projection[16];
+    GLint viewport[4];
+    GLdouble winX, winY, winZ;
+    GLdouble posX, posY, posZ;
+
+    glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
+    glGetDoublev(GL_PROJECTION_MATRIX, projection);
+    glGetIntegerv(GL_VIEWPORT, viewport);
+
+    // Convert mouse coordinates to window coordinates
+    winX = (double)mouseX;
+    winY = (double)viewport[3] - (double)mouseY; // Invert the Y coordinate
+    glReadPixels(mouseX, (int)winY, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &winZ);
+
+    // Use gluUnProject to convert window coordinates to world coordinates
+    gluUnProject(winX, winY, winZ, modelview, projection, viewport, &posX, &posY, &posZ);
+
+    worldX = (float)posX;
+    worldY = (float)posY;
 }
 
 // Keyboard callback
@@ -243,30 +273,91 @@ void updatePlayer(GLdouble timeDiff) {
     else if (player.getLookingDirection() == RIGHT)
         signal = -1;
 
-    if (mouseY != 0)
-        player.setThetaArm(signal * ((90.0f/Height) * (Height - mouseY) + 45));
+    GLfloat mouseWorldX = 0;
+    GLfloat mouseWorldY = 0;
+
+    getMouseWorldCoordinates(mouseX, mouseY, mouseWorldX, mouseWorldY);
+
+    player.setThetaArm(calculateArmAngle(mouseWorldX, mouseWorldY, player.getX(), player.getY()) * signal);
+}
+
+void checkCollisonEnemy(Enemy &enemy) {
+        int collisonDirection = -1;
+        int collisonDirectionArena = -1;
+        int collisonDirectionObstacle = -1;
+        int collisonDirectionPlayer = -1;
+
+        // Check collision with the arena
+        collisonDirection = enemy.checkArenaCollision(arena);
+        if (collisonDirection != -1)
+            collisonDirectionArena = collisonDirection;
+
+        // Check collision with obstacles
+        for (Obstacle obs : obstacles) {
+            collisonDirection = enemy.checkCollision(obs);
+            if (collisonDirection != -1)
+                collisonDirectionObstacle = collisonDirection;
+            
+            // Make the enemy stay on the platform
+            if (collisonDirection == DOWN){
+                if (enemy.getLeft() < obs.getLeft()){
+                    enemy.setWalkingDirection(RIGHT);
+                }   
+                else if (enemy.getRight() > obs.getRight()){
+                    enemy.setWalkingDirection(LEFT);
+                }
+            }
+        }
+
+        // Check collision with the player
+        enemy.checkCollision(player);
+
+        // Flip the direction of the enemy based on the collision direction
+        if (collisonDirectionArena == LEFT || collisonDirectionObstacle == LEFT) {
+            enemy.setWalkingDirection(RIGHT);
+        }
+        else if (collisonDirectionArena == RIGHT || collisonDirectionObstacle == RIGHT) {
+            enemy.setWalkingDirection(LEFT);
+        }
 }
 
 void updateEnemies(GLdouble timeDiff) {
-    // for (Enemy &enemy : enemies) {
-    //     // Move the enemy
-    //     enemy.moveX(enemy.getWalkSpeed() * timeDiff);
-    //     enemy.setDirection(RIGHT);
+    for (Enemy &enemy : enemies) {
+        // Gravity
+        enemy.moveY((player.getJumpSpeed()/2) * timeDiff);
+        enemy.setDirection(DOWN);
+        checkCollisonEnemy(enemy);
 
-    //     // Check collision with the arena
-    //     enemy.checkArenaCollision(arena);
+        // Move the enemy
+        if (enemy.getWalkingDirection() == LEFT){
+            enemy.moveX(-enemy.getWalkSpeed() * timeDiff);
+            enemy.setDirection(LEFT);
+        }
+        else if (enemy.getWalkingDirection() == RIGHT){
+            enemy.moveX(enemy.getWalkSpeed() * timeDiff);
+            enemy.setDirection(RIGHT);
+        }
+        checkCollisonEnemy(enemy);
 
-    //     // Check collision with obstacles
-    //     for (Obstacle obs : obstacles) {
-    //         enemy.checkCollision(obs);
-    //     }
+        // Flip the looking direction of the enemy based on the player position
+        if (player.getX() < enemy.getX() && enemy.getLookingDirection() == RIGHT) {
+            enemy.flipDirection();
+            enemy.setLookingDirection(LEFT);
+        } 
+        else if (player.getX() > enemy.getX() && enemy.getLookingDirection() == LEFT) {
+            enemy.flipDirection();
+            enemy.setLookingDirection(RIGHT);
+        }
 
-    //     // Check collision with the player
-    //     if (enemy.checkCollision(player)) {
-    //         // If the enemy collided with the player, the player is reset to the initial position
-    //         player = Player(arena.getHeight()/2, arena.getY(), 10);
-    //     }
-    // }
+        // Move the arm of the enemy based on the player position
+        int signal;
+        if (enemy.getLookingDirection() == LEFT)
+            signal = 1;
+        else if (enemy.getLookingDirection() == RIGHT)
+            signal = -1;
+        
+        enemy.setThetaArm(calculateArmAngle(player.getX(), player.getY(), enemy.getX(), enemy.getY()) * signal);
+    }
 }
 
 void idle(void)
@@ -370,6 +461,7 @@ int main(int argc, char** argv) {
     // Mouse callback
     glutMouseFunc(mouseClick);
     glutPassiveMotionFunc(passiveMotionCallback);
+    glutMotionFunc(motionCallback);
     
     init(arenaSVGFilename);
  
