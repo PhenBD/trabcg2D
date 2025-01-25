@@ -11,6 +11,13 @@ enum Direction {UP, DOWN, LEFT, RIGHT};
 
 class Character : public Object {
 
+protected:
+    GLfloat thetaLeft1 = 45;
+    GLfloat thetaLeft2 = 45;
+    GLfloat thetaRight1 = -45;
+    GLfloat thetaRight2 = 45;
+    GLfloat thetaArm = -45;
+
 private:
     int direction = RIGHT;
 

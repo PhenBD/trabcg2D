@@ -62,8 +62,8 @@ void Character::draw(GLfloat R, GLfloat G, GLfloat B) {
         drawCirc((0.15 * height), R, G, B);
         glTranslatef(0, (0.15 * height), 0);
         drawRect(0.3 * height, width, R, G, B);
-        drawArm(0, 0.1 * height, -45);
-        drawLegs(0, 0.3 * height, 45, 45, -45, 45);
+        drawArm(0, 0.1 * height, thetaArm);
+        drawLegs(0, 0.3 * height, thetaLeft1, thetaLeft2, thetaRight1, thetaRight2);
     glPopMatrix();
 }
 
