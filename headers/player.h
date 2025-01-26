@@ -3,12 +3,11 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include "character.h"
-#include <iostream>
+#include <math.h>
 
 class Player : public Character {
 
 private:
-    GLfloat walkSpeed = 0.04;
     GLfloat jumpSpeed;
     bool onAir = false;
     bool jumping = false;
@@ -16,7 +15,7 @@ private:
 
 public:
     Player(){}; // Default constructor
-    Player(GLfloat x, GLfloat y, GLfloat r) : Character(x, y, r) {
+    Player(GLfloat x, GLfloat y, GLfloat r) : Character(x, y, r, true) {
         jumpSpeed = ((height * 3) / 2000) * 2;
     };
     void draw(){
@@ -36,9 +35,6 @@ public:
         this->onAir = onAir;
     };
 
-    GLfloat getWalkSpeed(){
-        return walkSpeed;
-    };
     GLfloat getJumpSpeed(){
         return jumpSpeed;
     };

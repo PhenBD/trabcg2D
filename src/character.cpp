@@ -2,29 +2,33 @@
 
 void Character::drawRect(GLfloat height, GLfloat width, GLfloat R, GLfloat G, GLfloat B)
 {
-    glColor3f(R, G, B);
-    glBegin(GL_POLYGON);
-        glVertex2f(-width/2, 0);
-        glVertex2f(width/2, 0);
-        glVertex2f(width/2, height);
-        glVertex2f(-width/2, height);
-    glEnd();
+    glPushMatrix();
+        glColor3f(R, G, B);
+        glBegin(GL_POLYGON);
+            glVertex2f(-width/2, 0);
+            glVertex2f(width/2, 0);
+            glVertex2f(width/2, height);
+            glVertex2f(-width/2, height);
+        glEnd();
+    glPopMatrix();
 }
 
 void Character::drawCirc(GLfloat radius, GLfloat R, GLfloat G, GLfloat B)
 {
-    glColor3f(R, G, B);
-    glBegin(GL_TRIANGLE_FAN);
-        glVertex2f(0, 0); // Centro do círculo
-        for (int i = 0; i <= 360; i+=20)
-        {
-            GLfloat radians = i * M_PI / 180.0;
+    glPushMatrix();
+        glColor3f(R, G, B);
+        glBegin(GL_TRIANGLE_FAN);
+            glVertex2f(0, 0); // Centro do círculo
+            for (int i = 0; i <= 360; i+=20)
+            {
+                GLfloat radians = i * M_PI / 180.0;
 
-            GLfloat x = radius * cos(radians);
-            GLfloat y = radius * sin(radians);
-            glVertex2f(x, y);
-        }
-    glEnd();
+                GLfloat x = radius * cos(radians);
+                GLfloat y = radius * sin(radians);
+                glVertex2f(x, y);
+            }
+        glEnd();
+    glPopMatrix();
 }
 
 void Character::drawArm(GLfloat x, GLfloat y, GLfloat theta)
@@ -135,4 +139,17 @@ void Character::moveX(GLfloat dx) {
 
 void Character::moveY(GLfloat dy) {
     setY(y + dy);
+}
+
+void Character::shoot(std::list<Shoot> &shoots){
+    int ySignal = 1, xSignal = 1;
+    if (getThetaArm() < -90 || getThetaArm() > 90)
+        ySignal = -1;
+    if (getThetaArm() > 0)
+        xSignal = -1;
+
+    GLfloat xs = getX() + (width / 2) + (xSignal * height * 0.25 * abs(sin(getThetaArm() * (M_PI / 180.0))));
+    GLfloat ys = getY() + (0.4 * height) + (ySignal * height * 0.25 * abs(cos(getThetaArm() * (M_PI / 180.0))));
+    Shoot shoot(xs, ys, getThetaArm() + 90, walkSpeed * 2, height * 0.07, player);
+    shoots.push_back(shoot);
 }

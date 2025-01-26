@@ -11,8 +11,20 @@
 #include "headers/obstacle.h"
 #include "headers/enemy.h"
 #include "headers/arena.h"
+#include "headers/object.h"
 
 #define INC_KEY 1
+
+// Font
+void * font = GLUT_BITMAP_9_BY_15;
+
+// Check end
+bool ended = false;
+bool gameOver = false;
+bool gameWin = false;
+
+// Arena SVG file
+char* arenaSVGFilename;
 
 // Key status
 int keyStatus[256];
@@ -30,6 +42,7 @@ Arena arena;
 Player player;
 std::list<Obstacle> obstacles;
 std::list<Enemy> enemies;
+std::list<Shoot> shoots;
 
 using namespace tinyxml2;
 
@@ -130,6 +143,11 @@ void mouseClick(int button, int state, int x, int y) {
         
         glutPostRedisplay();
     }
+    if (button == GLUT_LEFT_BUTTON) {
+        if (state == GLUT_DOWN) {
+            player.shoot(shoots);
+        }
+    }
 }
 
 void getMouseWorldCoordinates(int mouseX, int mouseY, float &worldX, float &worldY) {
@@ -169,13 +187,17 @@ void keyPress(unsigned char key, int x, int y)
         case 'D':
              keyStatus[(int)('d')] = 1; //Using keyStatus trick
              break;
+        case 'r':
+        case 'R':
+            keyStatus[(int)('r')] = 1; //Using keyStatus trick
+            break;
         case 27 :
              exit(0);
     }
     glutPostRedisplay();
 }
 
-void keyup(unsigned char key, int x, int y)
+void keyUp(unsigned char key, int x, int y)
 {
     keyStatus[(int)(key)] = 0;
     glutPostRedisplay();
@@ -196,8 +218,14 @@ void checkCollisionPlayer() {
 
     // Check collision with the arena
     // The function returns the direction that the player collided with the arena
-    if (player.checkArenaCollision(arena) == DOWN)
+    int collisonDirection = player.checkArenaCollision(arena);
+    if (collisonDirection == DOWN)
         landedOnArena = true;
+    else if (collisonDirection == RIGHT){
+        std::cout << "Game Over!" << std::endl;
+        ended = true;
+        gameWin = true;
+    }   
 
     // Check collision with obstacles
     for (Obstacle obs : obstacles) {
@@ -278,7 +306,11 @@ void updatePlayer(GLdouble timeDiff) {
 
     getMouseWorldCoordinates(mouseX, mouseY, mouseWorldX, mouseWorldY);
 
-    player.setThetaArm(calculateArmAngle(mouseWorldX, mouseWorldY, player.getX(), player.getY()) * signal);
+    // Use the correct coordinates for the player's arm
+    float armBaseX = player.getX() + (player.getWidth() / 2);
+    float armBaseY = player.getY() + (player.getArmHeight());
+
+    player.setThetaArm(calculateArmAngle(mouseWorldX, mouseWorldY, armBaseX, armBaseY) * signal);
 }
 
 void checkCollisonEnemy(Enemy &enemy) {
@@ -322,6 +354,8 @@ void checkCollisonEnemy(Enemy &enemy) {
 }
 
 void updateEnemies(GLdouble timeDiff) {
+    Enemy::addShootTimer(timeDiff);
+
     for (Enemy &enemy : enemies) {
         // Gravity
         enemy.moveY((player.getJumpSpeed()/2) * timeDiff);
@@ -357,7 +391,100 @@ void updateEnemies(GLdouble timeDiff) {
             signal = -1;
         
         enemy.setThetaArm(calculateArmAngle(player.getX(), player.getY(), enemy.getX(), enemy.getY()) * signal);
+        
+        // Shoot periodically
+        if (Enemy::getShootTimer() >= 3000) {
+            enemy.shoot(shoots);
+        }
     }
+
+    if (Enemy::getShootTimer() >= 3000) {
+        Enemy::setShootTimer(0);
+    }
+}
+
+void updateShoots(GLdouble timeDiff) {
+    for (auto it = shoots.begin(); it != shoots.end(); ) {
+        it->move(timeDiff);
+
+        if (it->checkArenaCollision(arena)) {
+            it = shoots.erase(it); // Use erase to remove the element and get the next iterator
+            continue;
+        }
+
+        for (Obstacle obs : obstacles) {
+            if (it->checkCollision(obs)) {
+                it = shoots.erase(it); // Use erase to remove the element and get the next iterator
+                break;
+            }
+        }
+
+        if (it->isPlayer()) {
+            for (Enemy &enemy : enemies) {
+                if (it->checkCollision(enemy)) {
+                    it = shoots.erase(it); // Use erase to remove the element and get the next iterator
+                    enemies.remove(enemy);
+                    break;
+                }
+            }
+        }
+
+        if(it->checkCollision(player)) {
+            if (!it->isPlayer()) {
+                ended = true;
+                gameOver = true;
+                it = shoots.erase(it); // Use erase to remove the element and get the next iterator
+            }
+            break;
+        }
+        ++it;
+    }
+}
+
+void restart() {
+    ended = false;
+    player = Player();
+    obstacles.clear();
+    enemies.clear();
+    shoots.clear();
+    ReadSvg(arenaSVGFilename);
+}
+
+void drawText(const char* text, GLfloat x, GLfloat y, GLfloat r, GLfloat g, GLfloat b) {
+    GLint matrixMode;
+    glGetIntegerv(GL_MATRIX_MODE, &matrixMode); // Save the current matrix mode
+
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix(); // Save the current projection matrix
+    glLoadIdentity();
+    glOrtho(0, Width, Height, 0, -1, 1);
+
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix(); // Save the current model-view matrix
+    glLoadIdentity();
+
+    glColor3f(r, g, b);
+
+    GLfloat w = 0;
+    const char* textAux = text;
+    while (*textAux) {
+        w += glutBitmapWidth(font, *textAux);
+        textAux++;
+    }
+
+    //Define a posicao onde vai comecar a imprimir
+    glRasterPos2f(x - w/2, y);
+
+    //Imprime um caractere por vez
+    while(*text){
+        glutBitmapCharacter(font, *text);
+        text++;
+    }
+
+    glPopMatrix(); // Restore the previous model-view matrix
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix(); // Restore the previous projection matrix
+    glMatrixMode(matrixMode); // Restore the previous matrix mode
 }
 
 void idle(void)
@@ -371,9 +498,17 @@ void idle(void)
     timeDiference = currentTime - previousTime; // Elapsed time from the previous frame.
     previousTime = currentTime; //Update previous time
 
-    updatePlayer(timeDiference);
+    if (keyStatus[(int)('r')]  && ended) {
+        restart();
+    }
 
-    updateEnemies(timeDiference);
+    if (!ended){
+        updatePlayer(timeDiference);
+        if (enemies.size() > 0)
+            updateEnemies(timeDiference);
+        if (shoots.size() > 0)
+            updateShoots(timeDiference);
+    }
     
     glutPostRedisplay();
 }
@@ -381,7 +516,8 @@ void idle(void)
 // Render function
 void renderScene(void) {
     // Clear the screen.
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glLoadIdentity();
 
     // Configure the camera
     GLfloat eyeX = player.getX() - arena.getHeight()/2; // Camera follows the player on the X axis
@@ -406,64 +542,77 @@ void renderScene(void) {
     for (Enemy enemy : enemies) {
         enemy.draw();
     }
+    for (Shoot shoot : shoots) {
+        shoot.draw();
+    }
+
+    // Draw texts
+    if (ended){
+        if (gameOver)
+            drawText("Game Over", Width/2, Height/2 - 20, 1.0f, 0.0f, 0.0f);
+        else if (gameWin)
+            drawText("You Win!", Width/2, Height/2 - 20, 0.0f, 1.0f, 0.0f);
+        
+        drawText("Press 'R' to restart", Width/2, Height/2, 1.0f, 1.0f, 1.0f);
+    }
 
     glutSwapBuffers(); // Draw the new frame of the game.
 }
 
 // Função de inicialização
-void init(const char* arenaSVGFilename) {
+void init() {
     ResetKeyStatus();
     ReadSvg(arenaSVGFilename);
 
     // The color the windows will redraw. Its done to erase the previous frame.
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Black, no opacity(alpha).
  
-    glMatrixMode(GL_PROJECTION); // Select the projection matrix    
-    glOrtho(0,     // X coordinate of left edge             
-            arena.getHeight(),     // X coordinate of right edge            
-            arena.getHeight(),     // Y coordinate of bottom edge             
-            0,     // Y coordinate of top edge             
-            -1,     // Z coordinate of the “near” plane            
+    glMatrixMode(GL_PROJECTION); // Select the projection matrix   
+    glOrtho(0,     // X coordinate of left edge            
+            arena.getHeight(),     // X coordinate of right edge           
+            arena.getHeight(),     // Y coordinate of bottom edge             
+            0,     // Y coordinate of top edge    
+            -1,     // Z coordinate of the “near” plane    
             1);    // Z coordinate of the “far” plane
-    glMatrixMode(GL_MODELVIEW); // Select the projection matrix    
+    glMatrixMode(GL_MODELVIEW); // Select the modelview matrix
     glLoadIdentity();
 }
 
 int main(int argc, char** argv) {
-    // Check if the SVG file was passed as an argument.
+    // Check if the SVG file was passed as an argument
     if (argc < 2) {
         std::cerr << "Not enough arguments" << std::endl;
         return 1;
     }
 
-    // Get the SVG filename.
-    const char* arenaSVGFilename = argv[1];
+    // Get the SVG filename
+    arenaSVGFilename = argv[1];
 
-    // Initialize openGL with Double buffer and RGB color without transparency.
+    // Initialize openGL with Double buffer and RGB color without transparency
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
  
-    // Create the window.
+    // Create the window
     glutInitWindowSize(Width, Height);
     glutInitWindowPosition(750,250);
     glutCreateWindow("Trabalho CG 2D");
 
-    // Define callbacks.
+    // Define callbacks
 
-    // Display callback
+    // Display callbacks
     glutDisplayFunc(renderScene);
     glutIdleFunc(idle);
 
     // Keyboard callbacks
     glutKeyboardFunc(keyPress);
-    glutKeyboardUpFunc(keyup);
+    glutKeyboardUpFunc(keyUp);
 
-    // Mouse callback
+    // Mouse callbacks
     glutMouseFunc(mouseClick);
     glutPassiveMotionFunc(passiveMotionCallback);
     glutMotionFunc(motionCallback);
     
-    init(arenaSVGFilename);
+    init();
  
     glutMainLoop();
     return 0;
