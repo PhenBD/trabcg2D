@@ -181,6 +181,6 @@ void Character::shoot(std::list<Shoot> &shoots){
 
     GLfloat xs = getX() + (width / 2) + (xSignal * height * 0.25 * abs(sin(getThetaArm() * (M_PI / 180.0))));
     GLfloat ys = getY() + (0.4 * height) + (ySignal * height * 0.25 * abs(cos(getThetaArm() * (M_PI / 180.0))));
-    Shoot shoot(xs, ys, getThetaArm() + 90, legsAnimation, height * 0.07, player);
+    Shoot shoot(xs, ys, getThetaArm() + 90, walkSpeed * 2, height * 0.07, player);
     shoots.push_back(shoot);
 }

@@ -135,7 +135,8 @@ void mouseClick(int button, int state, int x, int y) {
     }
     if (button == GLUT_LEFT_BUTTON) {
         if (state == GLUT_DOWN) {
-            player.shoot(shoots);
+            if (!ended)
+             player.shoot(shoots);
         }
     }
 }
@@ -212,7 +213,6 @@ void checkCollisionPlayer() {
     if (collisonDirection == DOWN)
         landedOnArena = true;
     else if (collisonDirection == RIGHT){
-        std::cout << "Game Over!" << std::endl;
         ended = true;
         gameWin = true;
     }   
@@ -265,7 +265,7 @@ void updatePlayer(GLdouble timeDiff) {
     }
 
     // Treat jumping
-    if (player.getJumpingTime() <= 2000 && player.isJumping()) 
+    if (player.getJumpingTime() <= 1000 && player.isJumping()) 
     {
         player.moveY(-player.getJumpSpeed(), timeDiff);
         player.setOnAir(true);
