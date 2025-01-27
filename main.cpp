@@ -18,7 +18,7 @@
 // Font
 void * font = GLUT_BITMAP_9_BY_15;
 
-// Check end
+// Check end of the game
 bool ended = false;
 bool gameOver = false;
 bool gameWin = false;
@@ -61,8 +61,6 @@ void ReadSvg(const char* filename) {
         return;
     }
 
-    // std::cout << "Elemento raiz: " << root->Name() << std::endl;
-
     // Loop through the children elements
     for (XMLElement* child = root->FirstChildElement(); child != nullptr; child = child->NextSiblingElement()) {
         // std::cout << "Elemento: " << child->Name() << std::endl;
@@ -75,10 +73,6 @@ void ReadSvg(const char* filename) {
             const char* width = child->Attribute("width");
             const char* height = child->Attribute("height");
             const char* fill = child->Attribute("fill");
-
-            if (x != nullptr && y != nullptr && width != nullptr && height != nullptr) {
-                // std::cout << "  Retângulo: x = " << x << ", y = " << y << ", width = " << width << ", height = " << height << ", fill = " << fill << std::endl;
-            }
 
             // Check the fill color
             // If it is blue, it is the arena
@@ -97,10 +91,6 @@ void ReadSvg(const char* filename) {
             const char* cy = child->Attribute("cy");
             const char* r = child->Attribute("r");
             const char* fill = child->Attribute("fill");
-
-            if (cx != nullptr && cy != nullptr && r != nullptr) {
-                // std::cout << "  Círculo: cx = " << cx << ", cy = " << cy << ", r = " << r << ", fill = " << fill << std::endl;
-            }
             
             // Check the fill color
             // If it is green, it is the player
@@ -256,21 +246,28 @@ void updatePlayer(GLdouble timeDiff) {
     // Treat keyPress
     if(keyStatus[(int)('a')])
     {
-        player.moveX(-player.getWalkSpeed() * timeDiff);
+        player.moveX(-player.getWalkSpeed(), timeDiff);
         player.setDirection(LEFT);
+        player.setWalking(true);
         checkCollisionPlayer();
     }
-    if(keyStatus[(int)('d')])
+    else if(keyStatus[(int)('d')])
     {
-        player.moveX(player.getWalkSpeed() * timeDiff);
+        player.moveX(player.getWalkSpeed(), timeDiff);
         player.setDirection(RIGHT);
+        player.setWalking(true);
+        checkCollisionPlayer();
+    }
+    else {
+        player.setWalking(false);
+        player.moveX(0, timeDiff);
         checkCollisionPlayer();
     }
 
     // Treat jumping
     if (player.getJumpingTime() <= 2000 && player.isJumping()) 
     {
-        player.moveY(-player.getJumpSpeed() * timeDiff);
+        player.moveY(-player.getJumpSpeed(), timeDiff);
         player.setOnAir(true);
         player.addJumpingTime(timeDiff);
         player.setDirection(UP);
@@ -278,7 +275,7 @@ void updatePlayer(GLdouble timeDiff) {
     }
 
     // Gravity
-    player.moveY((player.getJumpSpeed()/2) * timeDiff);
+    player.moveY((player.getJumpSpeed()/2), timeDiff);
     player.setDirection(DOWN);
     checkCollisionPlayer();
 
@@ -358,17 +355,19 @@ void updateEnemies(GLdouble timeDiff) {
 
     for (Enemy &enemy : enemies) {
         // Gravity
-        enemy.moveY((player.getJumpSpeed()/2) * timeDiff);
+        enemy.moveY((player.getJumpSpeed()/2), timeDiff);
         enemy.setDirection(DOWN);
         checkCollisonEnemy(enemy);
 
         // Move the enemy
         if (enemy.getWalkingDirection() == LEFT){
-            enemy.moveX(-enemy.getWalkSpeed() * timeDiff);
+            enemy.moveX(-enemy.getWalkSpeed(), timeDiff);
+            enemy.setWalking(true);
             enemy.setDirection(LEFT);
         }
         else if (enemy.getWalkingDirection() == RIGHT){
-            enemy.moveX(enemy.getWalkSpeed() * timeDiff);
+            enemy.moveX(enemy.getWalkSpeed(), timeDiff);
+            enemy.setWalking(true);
             enemy.setDirection(RIGHT);
         }
         checkCollisonEnemy(enemy);

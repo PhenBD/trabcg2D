@@ -13,10 +13,10 @@ enum Direction {UP, DOWN, LEFT, RIGHT};
 class Character : public Object {
 
 protected:
-    GLfloat thetaLeft1 = 45;
-    GLfloat thetaLeft2 = 45;
-    GLfloat thetaRight1 = -45;
-    GLfloat thetaRight2 = 45;
+    GLfloat thetaLeft1 = 0;
+    GLfloat thetaLeft2 = 0;
+    GLfloat thetaRight1 = 0;
+    GLfloat thetaRight2 = 0;
     GLfloat thetaArm = -45;
     GLfloat armHeight = 0.4 * height;
 
@@ -24,12 +24,14 @@ private:
     int direction = RIGHT;
     int lookingDirection = RIGHT;
     GLfloat walkSpeed = 0.04;
-    bool player = false;
+    bool walking = false;
+    GLfloat legsAnimation = walkSpeed * 3;
+    bool player;
 
     void drawRect(GLfloat height, GLfloat width, GLfloat R, GLfloat G, GLfloat B);
     void drawCirc(GLfloat radius, GLfloat R, GLfloat G, GLfloat B);
     void drawArm(GLfloat x, GLfloat y, GLfloat theta);
-    void drawLegs(GLfloat x, GLfloat y, GLfloat thetaLeft1, GLfloat thetaLeft2, GLfloat thetaRight1, GLfloat thetaRight2);
+    void drawLegs(GLfloat x, GLfloat y);
 
 public:
     Character(){}; // Default constructor
@@ -37,8 +39,8 @@ public:
         this->player = player;
     };
     void draw(GLfloat R, GLfloat G, GLfloat B);
-    void moveX(GLfloat dx);
-    void moveY(GLfloat dy);
+    void moveX(GLfloat dx, GLdouble timeDiff);
+    void moveY(GLfloat dy, GLdouble timeDiff);
     int checkCollision(Object obj);
     int checkArenaCollision(Arena arena);
     void flipDirection();
@@ -52,6 +54,9 @@ public:
     };
     void setThetaArm(GLfloat theta){
         this->thetaArm = theta;
+    };
+    void setWalking(bool walking){
+        this->walking = walking;
     };
 
     int getDirection(){

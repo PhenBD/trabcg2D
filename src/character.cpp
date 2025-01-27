@@ -40,7 +40,7 @@ void Character::drawArm(GLfloat x, GLfloat y, GLfloat theta)
     glPopMatrix();
 }
 
-void Character::drawLegs(GLfloat x, GLfloat y, GLfloat thetaLeft1, GLfloat thetaLeft2, GLfloat thetaRight1, GLfloat thetaRight2){
+void Character::drawLegs(GLfloat x, GLfloat y){
     glPushMatrix();
         glTranslatef(x, y, 0);
         glRotatef(thetaLeft1, 0, 0, 1);
@@ -67,7 +67,7 @@ void Character::draw(GLfloat R, GLfloat G, GLfloat B) {
         glTranslatef(0, (0.15 * height), 0);
         drawRect(0.3 * height, width, R, G, B);
         drawArm(0, 0.1 * height, thetaArm);
-        drawLegs(0, 0.3 * height, thetaLeft1, thetaLeft2, thetaRight1, thetaRight2);
+        drawLegs(0, 0.3 * height);
     glPopMatrix();
 }
 
@@ -133,12 +133,43 @@ void Character::flipDirection() {
     thetaRight2 *= -1;
 }
 
-void Character::moveX(GLfloat dx) {
-    setX(x + dx);
+void Character::moveX(GLfloat dx, GLdouble timeDiff) {
+    if (walking){
+        if (lookingDirection == LEFT){
+            thetaLeft1 += -legsAnimation * timeDiff;
+            thetaLeft2 += -legsAnimation / 1.5 * timeDiff;
+            thetaRight1 += legsAnimation * timeDiff;
+            thetaRight2 += -legsAnimation / 1.5 * timeDiff;
+        }
+        else if (lookingDirection == RIGHT){
+            thetaLeft1 += legsAnimation * timeDiff;
+            thetaLeft2 += legsAnimation / 1.5 * timeDiff;
+            thetaRight1 += -legsAnimation * timeDiff;
+            thetaRight2 += legsAnimation / 1.5 * timeDiff;
+        }
+
+        if (thetaLeft1 > 45 || thetaLeft1 < -45 || thetaRight2 > 45 || thetaRight2 < -45){
+            legsAnimation *= -1;
+        }
+        if ((thetaLeft1 > 0 || thetaLeft2 > 0 || thetaRight1 < 0 || thetaRight2 > 0) && lookingDirection == LEFT){
+            legsAnimation *= -1;
+        }
+        else if ((thetaLeft1 < 0 || thetaLeft2 < 0 || thetaRight1 > 0 || thetaRight2 < 0) && lookingDirection == RIGHT){
+            legsAnimation *= -1;
+        }
+    }
+    else {
+        thetaLeft1 = 0;
+        thetaLeft2 = 0;
+        thetaRight1 = 0;
+        thetaRight2 = 0;
+    }
+    
+    setX(x + dx * timeDiff);
 }
 
-void Character::moveY(GLfloat dy) {
-    setY(y + dy);
+void Character::moveY(GLfloat dy, GLdouble timeDiff) {
+    setY(y + dy * timeDiff);
 }
 
 void Character::shoot(std::list<Shoot> &shoots){
@@ -150,6 +181,6 @@ void Character::shoot(std::list<Shoot> &shoots){
 
     GLfloat xs = getX() + (width / 2) + (xSignal * height * 0.25 * abs(sin(getThetaArm() * (M_PI / 180.0))));
     GLfloat ys = getY() + (0.4 * height) + (ySignal * height * 0.25 * abs(cos(getThetaArm() * (M_PI / 180.0))));
-    Shoot shoot(xs, ys, getThetaArm() + 90, walkSpeed * 2, height * 0.07, player);
+    Shoot shoot(xs, ys, getThetaArm() + 90, legsAnimation, height * 0.07, player);
     shoots.push_back(shoot);
 }
